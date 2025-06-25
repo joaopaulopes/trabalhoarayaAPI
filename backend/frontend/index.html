@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Pets</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
+    form input, form button { padding: 0.5rem; margin: 0.3rem 0; width: 100%; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.5rem; border: 1px solid #ddd; margin-bottom: 0.3rem; display: flex; justify-content: space-between; }
+    button.del-btn { background: red; color: white; border: none; padding: 0.2rem 0.5rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Cadastro de Pets</h1>
+
+  <form id="petForm">
+    <input type="text" id="nome" placeholder="Nome do pet" required />
+    <input type="text" id="tipo" placeholder="Tipo (cachorro, gato, etc)" required />
+    <input type="number" id="idade" placeholder="Idade" min="0" required />
+    <button type="submit">Cadastrar</button>
+  </form>
+
+  <h2>Lista de Pets</h2>
+  <ul id="petsList"></ul>
+
+  <script>
+    const apiUrl = 'http://localhost:3000/api/pets';
+
+    const form = document.getElementById('petForm');
+    const petsList = document.getElementById('petsList');
+
+    // Função para carregar e mostrar os pets
+    async function loadPets() {
+      try {
+        const res = await fetch(apiUrl);
+        const pets = await res.json();
+
+        petsList.innerHTML = ''; // limpa lista
+
+        pets.forEach(pet => {
+          const li = document.createElement('li');
+          li.textContent = `${pet.nome} - ${pet.tipo} - ${pet.idade} anos`;
+
+          const delBtn = document.createElement('button');
+          delBtn.textContent = 'Excluir';
+          delBtn.classList.add('del-btn');
+          delBtn.onclick = async () => {
+            await fetch(`${apiUrl}/${pet.id}`, { method: 'DELETE' });
+            loadPets();
+          };
+
+          li.appendChild(delBtn);
+          petsList.appendChild(li);
+        });
+      } catch (err) {
+        console.error('Erro ao carregar pets:', err);
+      }
+    }
+
+    // Ao enviar o formulário, cadastra pet
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = document.getElementById('nome').value.trim();
+      const tipo = document.getElementById('tipo').value.trim();
+      const idade = parseInt(document.getElementById('idade').value, 10);
+
+      if (!nome || !tipo || isNaN(idade)) {
+        alert('Preencha todos os campos corretamente.');
+        return;
+      }
+
+      try {
+        await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome, tipo, idade })
+        });
+
+        form.reset();
+        loadPets();
+      } catch (err) {
+        console.error('Erro ao cadastrar pet:', err);
+      }
+    });
+
+    // Carrega pets quando a página abre
+    loadPets();
+  </script>
+
+</body>
+</html>
